@@ -1,9 +1,9 @@
 # DAY 15 — SPLUNK INSTALL + LOG INGESTION
 
-**Author:** Karthikeyan
-**Platform:** Windows 11
-**Tool:** Splunk Enterprise 10.4.0
-**Objective:** Install Splunk and ingest logs for SOC analysis practice
+**Author:** Karthikeyan  
+**Platform:** Windows 11  
+**Tool:** Splunk Enterprise 10.4.0  
+**Objective:** Install Splunk and ingest logs for SOC analysis practice  
 
 ---
 

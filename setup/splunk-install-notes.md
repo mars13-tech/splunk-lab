@@ -1,10 +1,10 @@
 # Splunk Enterprise Installation on Windows 11
 
-**Author:** Karthikeyan
-**Platform:** Windows 11
-**Splunk Version:** Splunk Enterprise 10.4.0 (Free Trial)
-**Install Time:** ~10 Minutes
-**Status:** Successfully Installed and Running
+**Author:** Karthikeyan  
+**Platform:** Windows 11  
+**Splunk Version:** Splunk Enterprise 10.4.0 (Free Trial)  
+**Install Time:** ~10 Minutes  
+**Status:** Successfully Installed and Running  
 
 ---
 

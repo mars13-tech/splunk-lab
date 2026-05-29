@@ -146,16 +146,23 @@ Option 2 — Windows Services
 
 ## Splunk Directory Structure
 
-C:\Program Files\Splunk\
-|
-|-- bin\                 — Splunk executables and CLI tools
-|-- etc\                 — Configuration files
-|   |-- apps\            — Installed apps and add-ons
-|   |-- system\          — System configuration
-|-- var\
-|   |-- log\splunk\      — Splunk internal logs
-|-- share\               — Web assets
-
+C:\Program Files\Splunk
+│
+├── bin
+│   └── splunk.exe           — Splunk CLI and executables
+│
+├── etc
+│   ├── apps\                — Installed apps and add-ons
+│   ├── system\              — System configuration files
+│   └── users\               — User-specific settings
+│
+├── var
+│   ├── log
+│   │   └── splunk\          — Splunk internal logs
+│   └── lib
+│       └── splunk\          — Index data storage location
+│
+└── share\                   — Web assets and UI files
 ---
 
 ## Core Splunk Concepts Learned During Install

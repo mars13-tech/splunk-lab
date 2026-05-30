@@ -233,3 +233,27 @@ Successful detection of excessive failed authentication attempts that may indica
 * Password spraying
 * Automated brute force attacks
 * Account compromise attempts
+
+---
+
+# Screenshots
+
+Store screenshots in:
+
+```text
+screenshots/
+```
+
+Required:
+
+```text
+brute-force-query.png
+brute-force-alert.png
+triggered-alerts.png
+```
+
+---
+
+# Key Takeaway
+
+A single failed login is usually normal user behavior. A correlation search helps identify patterns of repeated failed authentication attempts over time, allowing SOC analysts to detect brute force attacks and respond before an account is compromised.

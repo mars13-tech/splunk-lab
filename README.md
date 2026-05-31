@@ -185,16 +185,6 @@ across Linux and Windows — detected entirely using Splunk.
 
 ---
 
-## Future Improvements
-
-- [ ] Add Sysmon for deeper Windows endpoint visibility
-- [ ] Build additional correlation rules for lateral movement
-- [ ] Add threat intelligence lookup integration
-- [ ] Create saved dashboards for SOC monitoring
-- [ ] Add Linux auth.log correlation rules
-
----
-
 ## Author
 
 **Karthikeyan**  

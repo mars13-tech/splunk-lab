@@ -1,4 +1,4 @@
-# DAY 15 — SPLUNK INSTALL + LOG INGESTION
+#  SPLUNK INSTALL + LOG INGESTION
 
 **Author:** Karthikeyan  
 **Platform:** Windows 11  

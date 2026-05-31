@@ -1,4 +1,4 @@
-# Day 16 Notes — SPL Basics & Analyst Mindset
+# SPL Basics & Analyst Mindset
 
 ## Objective
 

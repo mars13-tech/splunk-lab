@@ -1,4 +1,4 @@
-# Day 17 – SPL Intermediate (eval, dedup, rex, transaction, lookup)
+# SPL Intermediate (eval, dedup, rex, transaction, lookup)
 
 ## Objective
 

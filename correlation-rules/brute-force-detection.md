@@ -1,259 +1,101 @@
-# Brute Force Login Detection
+# Brute Force Detection Correlation Rule
 
-## Overview
+## Rule Name
 
-This detection identifies potential brute force login attacks by monitoring excessive failed login attempts within a short time period.
-
-Brute force attacks occur when an attacker repeatedly attempts different passwords against a user account until successful authentication is achieved.
-
-Windows records failed login attempts using Event ID 4625.
+SSH Brute Force Detection
 
 ---
 
-# Detection Information
+## Description
 
-## Detection Name
+This correlation rule detects potential SSH brute force attacks against the Ubuntu server by identifying a high number of failed authentication attempts originating from the same source IP address.
 
-```text
-Brute Force Login Detection
-```
-
-## MITRE ATT&CK
-
-```text
-T1110 - Brute Force
-```
-
-## Severity
-
-```text
-Medium
-```
-
-## Data Source
-
-```text
-Windows Security Logs
-```
-
-## Event ID
-
-```text
-4625
-```
+The rule is designed to identify attackers attempting to gain unauthorized access through password guessing.
 
 ---
 
-# Detection Logic
+## Detection Logic
 
-Trigger an alert when:
-
-```text
-5 or more failed logins
-within 5 minutes
-on the same host
-```
-
-In a production environment, the threshold would typically be:
-
-```text
-10 or more failed logins
-within 5 minutes
-from the same source IP
-```
-
-For this lab environment, the detection is based on host activity because only one Windows system is available.
+1. Monitor Linux authentication logs.
+2. Identify SSH failed login events.
+3. Extract source IP addresses.
+4. Count failed login attempts per source IP.
+5. Trigger an alert when the number of failed attempts exceeds the defined threshold.
 
 ---
 
-# SPL Query
+## Data Sources
+
+| Source            | Sourcetype |
+| ----------------- | ---------- |
+| /var/log/auth.log | auth       |
+
+---
+
+## Detection Query
 
 ```spl
-index=* EventCode=4625
-| bucket _time span=5m
-| stats count by host _time
-| where count >= 5
-| sort -count
+index=main host="mars-VirtualBox" "Failed password"
+| rex "from (?<src>\d+\.\d+\.\d+\.\d+)"
+| stats count as failed_attempts by src
+| where failed_attempts > 10
+| sort - failed_attempts
 ```
 
 ---
 
-# Query Breakdown
+## Correlation Conditions
 
-## Search Failed Logins
-
-```spl
-index=* EventCode=4625
-```
-
-Searches for Windows failed authentication events.
-
----
-
-## Create Time Buckets
-
-```spl
-bucket _time span=5m
-```
-
-Groups events into 5-minute intervals.
-
-Example:
-
-```text
-07:00 - 07:05
-07:05 - 07:10
-07:10 - 07:15
-```
+| Condition      | Value                 |
+| -------------- | --------------------- |
+| Event Type     | Failed SSH Login      |
+| Threshold      | More than 10 attempts |
+| Time Window    | 5 Minutes             |
+| Grouping Field | Source IP Address     |
 
 ---
 
-## Count Failed Logins
+## Alert Configuration
 
-```spl
-stats count by host _time
-```
-
-Counts failed login attempts for each host within each time bucket.
-
----
-
-## Apply Detection Threshold
-
-```spl
-where count >= 5
-```
-
-Returns only suspicious activity meeting the brute force threshold.
+| Setting    | Value                     |
+| ---------- | ------------------------- |
+| Alert Name | SSH_Brute_Force_Detection |
+| Severity   | High                      |
+| Schedule   | Every 5 Minutes           |
+| Trigger    | Number of Results > 0     |
+| Action     | Email Notification        |
 
 ---
 
-# Alert Configuration
+## Attack Indicators
 
-## Alert Title
-
-```text
-Brute Force Login Detection
-```
-
-## Schedule
-
-```text
-Run Every 5 Minutes
-```
-
-## Trigger Condition
-
-```text
-Number of Results > 0
-```
-
-## Severity
-
-```text
-Medium
-```
+* Multiple failed SSH login attempts
+* Repeated authentication failures
+* Password guessing behavior
+* Single source IP generating excessive failures
 
 ---
 
-# Testing Procedure
+## MITRE ATT&CK Mapping
 
-## Generate Failed Logins
-
-1. Lock the Windows workstation.
-2. Enter an incorrect password multiple times.
-3. Generate Event ID 4625 logs.
-4. Verify events appear in Splunk.
+| Technique   | ID    |
+| ----------- | ----- |
+| Brute Force | T1110 |
 
 ---
 
-## Verification Query
+## Investigation Steps
 
-```spl
-index=* EventCode=4625
-| stats count by host
-```
-
-Expected Result:
-
-```text
-Host shows increasing failed login count.
-```
+1. Identify the attacking IP address.
+2. Determine whether the source is internal or external.
+3. Review authentication activity from the source.
+4. Check for successful login events following failures.
+5. Investigate related activity on the target host.
+6. Consider blocking the source IP if malicious.
 
 ---
 
-## Detection Validation
+## Expected Outcome
 
-Run:
+This rule provides early detection of SSH brute force activity and helps analysts identify unauthorized access attempts before a successful compromise occurs.
 
-```spl
-index=* EventCode=4625
-| bucket _time span=5m
-| stats count by host _time
-```
-
-Confirm that the count exceeds the configured threshold.
-
----
-
-# Investigation Steps
-
-When the alert fires:
-
-1. Identify affected host.
-2. Review failed login volume.
-3. Check targeted user accounts.
-4. Search for successful logins after failures.
-5. Determine whether activity is legitimate or malicious.
-
-Useful follow-up search:
-
-```spl
-index=* (EventCode=4624 OR EventCode=4625)
-```
-
-Look for patterns such as:
-
-```text
-4625
-4625
-4625
-4624
-```
-
-which may indicate a successful compromise after repeated failures.
-
----
-
-# Expected Outcome
-
-Successful detection of excessive failed authentication attempts that may indicate:
-
-* Password guessing
-* Password spraying
-* Automated brute force attacks
-* Account compromise attempts
-
----
-
-# Screenshots
-
-Store screenshots in:
-
-```text
-screenshots/
-```
-
-Required:
-
-```text
-brute-force-query.png
-brute-force-alert.png
-triggered-alerts.png
-```
-
----
-
-# Key Takeaway
-
-A single failed login is usually normal user behavior. A correlation search helps identify patterns of repeated failed authentication attempts over time, allowing SOC analysts to detect brute force attacks and respond before an account is compromised.

@@ -1,4 +1,4 @@
-# Day 18 — Splunk Dashboards
+# Splunk Dashboards
 
 ## Objective
 

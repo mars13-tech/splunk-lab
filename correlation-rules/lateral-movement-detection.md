@@ -1,341 +1,179 @@
-# Lateral Movement Detection
+# Lateral Movement Detection Correlation Rule
 
-## Overview
+## Rule Name
 
-This detection identifies potential lateral movement activity by monitoring successful network logons across systems.
-
-Lateral movement occurs when an attacker uses compromised credentials to move from one machine to another after gaining initial access.
-
-Windows records successful authentication events using Event ID 4624.
+Windows Lateral Movement Detection
 
 ---
 
-# Detection Information
+## Description
 
-## Detection Name
+This correlation rule detects potential lateral movement activity by monitoring Windows authentication events, privilege assignment events, and process creation events.
 
-```text
-Possible Lateral Movement
-```
-
-## MITRE ATT&CK
-
-```text
-T1021 - Remote Services
-T1078 - Valid Accounts
-```
-
-## Severity
-
-```text
-High
-```
-
-## Data Source
-
-```text
-Windows Security Logs
-```
-
-## Event ID
-
-```text
-4624
-```
-
-## Logon Type
-
-```text
-3
-```
-
-(Network Logon)
+The rule is designed to identify attacker activity occurring after initial system compromise, where access is expanded to additional systems or elevated privileges are obtained.
 
 ---
 
-# Attack Scenario
+## Detection Logic
 
-An attacker compromises a user account and begins accessing multiple systems.
-
-Example:
-
-```text
-User-PC
-   ↓
-File Server
-   ↓
-Application Server
-   ↓
-Domain Controller
-```
-
-This behavior is often observed during:
-
-* Internal reconnaissance
-* Credential abuse
-* Lateral movement
-* Privilege escalation campaigns
+1. Monitor Windows Security Event Logs.
+2. Detect successful network logons.
+3. Detect privileged account activity.
+4. Detect process creation events.
+5. Correlate authentication, privilege escalation, and execution activity.
+6. Generate an alert when suspicious activity is observed.
 
 ---
 
-# Detection Logic
+## Data Sources
 
-Identify successful network logons that may indicate movement between systems.
+| Source               | Sourcetype           |
+| -------------------- | -------------------- |
+| WinEventLog:Security | WinEventLog:Security |
 
-Production environments typically detect:
+---
 
-```text
-Same account
-+
-3 or more hosts
-+
-Within 1 hour
-```
-
-Example production query:
+## Detection Query
 
 ```spl
-index=* EventCode=4624 Logon_Type=3
-| bucket _time span=1h
-| stats dc(host) as systems values(host) as hosts by Account_Name _time
-| where systems >= 3
+index=main host="LAPTOP-7S5H8RIM"
+(EventCode=4624 OR EventCode=4672 OR EventCode=4688)
+| stats count values(EventCode) as event_codes by Account_Name Source_Network_Address
+| where count > 0
+| sort - count
 ```
 
 ---
 
-# Lab Detection Query
+## Correlation Conditions
 
-Because this lab contains a single Windows host, true multi-host lateral movement cannot be simulated.
-
-The lab detection focuses on identifying network authentication activity.
-
-```spl
-index=* EventCode=4624
-| rex field=_raw "Logon Type:\s+(?<Logon_Type>\d+)"
-| search Logon_Type=3
-| stats count by host
-```
+| Condition            | Value           |
+| -------------------- | --------------- |
+| Successful Logon     | Event ID 4624   |
+| Privilege Assignment | Event ID 4672   |
+| Process Creation     | Event ID 4688   |
+| Host                 | LAPTOP-7S5H8RIM |
 
 ---
 
-# Query Breakdown
+## Alert Configuration
 
-## Search Successful Logons
-
-```spl
-index=* EventCode=4624
-```
-
-Returns successful authentication events.
-
----
-
-## Extract Logon Type
-
-```spl
-rex field=_raw "Logon Type:\s+(?<Logon_Type>\d+)"
-```
-
-Parses the Logon Type value from the raw Windows event.
+| Setting    | Value                      |
+| ---------- | -------------------------- |
+| Alert Name | Lateral_Movement_Detection |
+| Severity   | Critical                   |
+| Schedule   | Every 5 Minutes            |
+| Trigger    | Number of Results > 0      |
+| Action     | Email Notification         |
 
 ---
 
-## Filter Network Logons
+## Windows Event IDs
 
-```spl
-search Logon_Type=3
-```
-
-Displays only network authentication events.
-
----
-
-## Count Activity
-
-```spl
-stats count by host
-```
-
-Shows the volume of network logons observed on each host.
+| Event ID | Description                              |
+| -------- | ---------------------------------------- |
+| 4624     | Successful Logon                         |
+| 4672     | Special Privileges Assigned to New Logon |
+| 4688     | Process Creation                         |
 
 ---
 
-# Alert Configuration
+## Attack Indicators
 
-## Alert Title
+* Successful network authentication
+* Administrative privilege assignment
+* Execution of commands or tools
+* Access from unusual source systems
+* Suspicious account activity
+
+---
+
+## MITRE ATT&CK Mapping
+
+| Technique                         | ID    |
+| --------------------------------- | ----- |
+| Valid Accounts                    | T1078 |
+| Remote Services                   | T1021 |
+| Privilege Escalation              | T1068 |
+| Command and Scripting Interpreter | T1059 |
+
+---
+
+## Investigation Steps
+
+1. Identify the account involved.
+2. Review the source network address.
+3. Determine whether the login was expected.
+4. Review Event ID 4672 activity.
+5. Investigate processes created through Event ID 4688.
+6. Identify any signs of privilege escalation.
+7. Review related authentication events.
+8. Determine whether additional systems were accessed.
+
+---
+
+## Attack Chain Position
 
 ```text
-Possible Lateral Movement
-```
-
-## Schedule
-
-```text
-Run Every Hour
-```
-
-## Trigger Condition
-
-```text
-Number of Results > 0
-```
-
-## Severity
-
-```text
-High
+SSH Compromise
+       ↓
+Windows Authentication (4624)
+       ↓
+Privilege Assignment (4672)
+       ↓
+Process Execution (4688)
+       ↓
+Potential Lateral Movement
 ```
 
 ---
 
-# Testing Procedure
+## SOC Analyst Response
 
-## Verify Successful Logons
+### Priority
 
-Run:
+Critical
 
-```spl
-index=* EventCode=4624
-| stats count
-```
+### Recommended Actions
 
-Confirm successful login events are being collected.
-
----
-
-## Verify Logon Types
-
-Run:
-
-```spl
-index=* EventCode=4624
-| rex field=_raw "Logon Type:\s+(?<Logon_Type>\d+)"
-| stats count by Logon_Type
-```
-
-Expected output:
-
-```text
-Logon_Type    Count
-2             XX
-3             XX
-10            XX
-```
+* Validate user activity.
+* Review source host information.
+* Investigate executed commands.
+* Examine privilege escalation events.
+* Identify additional affected systems.
+* Contain compromised accounts if necessary.
+* Escalate to incident response procedures.
 
 ---
 
-## Verify Detection Query
+## Expected Outcome
 
-Run:
-
-```spl
-index=* EventCode=4624
-| rex field=_raw "Logon Type:\s+(?<Logon_Type>\d+)"
-| search Logon_Type=3
-```
-
-Confirm network authentication events are returned.
+This rule enables analysts to identify post-compromise activity and provides visibility into authentication, privilege escalation, and execution events that may indicate attacker movement within the environment.
 
 ---
 
-# Investigation Steps
+## Detection Coverage
 
-When the alert fires:
-
-### Identify User Account
-
-```spl
-index=* EventCode=4624
-| stats count by Account_Name
-```
-
----
-
-### Review Host Activity
-
-```spl
-index=* EventCode=4624
-| stats values(host) by Account_Name
-```
+| Attack Phase         | Coverage |
+| -------------------- | -------- |
+| Initial Access       | No       |
+| Credential Access    | Partial  |
+| Valid Accounts       | Yes      |
+| Lateral Movement     | Yes      |
+| Privilege Escalation | Yes      |
+| Execution            | Yes      |
 
 ---
 
-### Check Privileged Logons
+## Business Impact
 
-Search for:
+Successful lateral movement can allow attackers to:
 
-```text
-4672
-```
+* Access additional systems
+* Escalate privileges
+* Execute malicious tools
+* Expand their presence within the environment
+* Increase the impact of a security incident
 
-Special privileges assigned to a new logon.
+Early detection reduces attacker dwell time and improves incident response effectiveness.
 
----
-
-### Review Process Execution
-
-Search for:
-
-```text
-4688
-```
-
-Process creation events following authentication.
-
----
-
-# Expected Outcome
-
-Detection identifies authentication activity that may be associated with:
-
-* Credential theft
-* Remote access
-* Internal reconnaissance
-* Lateral movement
-* Account compromise
-
----
-
-# Lab Environment
-
-Host:
-
-```text
-LAPTOP-7S5H8RIM
-```
-
-Log Source:
-
-```text
-WinEventLog:Security
-```
-
-SIEM:
-
-```text
-Splunk Enterprise
-```
-
----
-
-# Screenshots
-
-Store screenshots in:
-
-```text
-screenshots/
-```
-
-Required:
-
-```text
-lateral-movement-query.png
-lateral-movement-alert.png
-triggered-alerts.png
-```
-
----
-
-# Key Takeaway
-
-Lateral movement is one of the most important attack phases to detect because it often indicates that an attacker already has valid credentials inside the environment. Monitoring successful network logons and authentication patterns helps SOC analysts identify compromised accounts before critical systems are reached.

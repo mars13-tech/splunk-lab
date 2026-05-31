@@ -1,4 +1,4 @@
-# Day 19 – Splunk Correlation Searches
+# Splunk Correlation Searches
 
 ## Objective
 
